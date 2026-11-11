@@ -22,98 +22,110 @@ WEBHOOK_PATTERN = re.compile(
     r"[A-Za-z0-9_-]+/[A-Za-z0-9_-]+"
 )
 
-MESSAGES = [
-    "Deadline có thể trễ, nhưng Tết thì không! 😂",
-    "Tết đang đến rất gần, lương tháng 13 đã đến chưa? 💸",
-    "Mỗi ngày đi làm là một ngày gần lì xì hơn! 🧧",
-    "Cố lên đồng đội! Bánh chưng đang chờ chúng ta! 🍃",
-    "Tết này có người yêu chưa? Hay vẫn yêu công việc? 😂",
-    "Bug có thể còn, nhưng Tết thì phải tới! 🐛",
-    "Hôm nay làm việc chăm chỉ, Tết về ăn bánh chưng! 💪",
-    "Không khí Tết đang loading... ⏳",
-    "Tết đến nơi rồi, đừng để deadline đi theo về quê! 🚀",
-    "Đi làm vì đam mê, mong Tết vì đam mê lớn hơn! 😆",
-    "Tết là để sum vầy, không phải để fix bug! 🧑‍💻",
-    "Mọi con đường đều dẫn về nhà, trừ đường tới production! 😂",
-    "Chúc cả team một ngày ít bug, nhiều niềm vui! 🌸",
-    "Lương có thể hết, nhưng niềm vui đón Tết thì còn! 🎊",
-    "Tâm trí đã về quê, chỉ còn thân xác ở văn phòng! 🏠",
-    "Tết sắp đến rồi, wishlist đã chuẩn bị xong chưa? 🎁",
-    "Năm mới, mục tiêu mới, nhưng nhớ đóng task cũ nhé! 😎",
-    "Cố thêm chút nữa, mùa bánh tét đang tới! 🍃",
-    "Chưa thấy hoa mai, nhưng đã thấy mùi Tết rồi! 🌼",
-    "Chúc mọi người code mượt, deploy êm, Tết an lành! ✨",
-    "Việc hôm nay làm từng chút, niềm vui cuối năm gom từng ngày. 🌱",
-    "Ai đã đặt vé về quê rồi thì xin chia sẻ chút bình tĩnh với cả team. 🚆",
-    "Một buổi sáng ít họp đáng được bỏ vào phong bao lì xì. 🧧",
-    "Chúc bạn tìm được chỗ ngồi cạnh cửa sổ trên chuyến xe về nhà. 🚌",
-    "Người ta đếm cừu để ngủ. Mình đếm ngày để ăn bánh chưng. 🐑",
-    "Nghe tiếng chổi quét sân là thấy nhà sắp có Tết. 🌿",
-    "Một lời hỏi thăm cũng đủ làm ngày cuối năm ấm hơn. ☀️",
-    "Mứt gừng hơi cay, còn tin nhắn báo nghỉ Tết thì ngọt. 🍬",
-    "Hôm nay đóng được một task là dọn được một góc cho năm mới. ✅",
-    "Tết về rồi, nhớ dành thời gian cho người hay hỏi ‘ăn cơm chưa?’. 🍚",
-    "Cứ làm tốt phần mình hôm nay, phần còn lại để mai tính. 🌱",
-    "Nếu có cuộc họp về mâm cỗ Tết, mình xin tình nguyện ghi biên bản. 🍲",
-    "Mỗi lần dọn ngăn kéo cuối năm là một lần gặp lại chính mình hồi tháng Một. 📦",
-    "Một cành mai, một ấm trà, một buổi sáng thong thả. 🌼",
-    "Tự thưởng một khoảng nghỉ sau khi xong việc cũng là một kế hoạch hay. ☕",
-    "Chúc team mở lịch hôm nay và thấy ít ô màu hơn dự kiến. 📆",
-    "Cuối năm có hai thứ đi rất nhanh, thời gian và đĩa mứt dừa. 🥥",
-    "Về nhà ăn một bữa cơm, nghe vài chuyện cũ kể lại vẫn thấy vui. 🏡",
-    "Năm cũ còn vài trang, viết thêm một điều đáng nhớ nhé. 📖",
-    "Chúc bạn gặp một người vui tính trên đường về quê. 🚉",
-    "Inbox có thể đầy, vẫn còn chỗ cho một lời chúc. 💌",
-    "Ước gì nút bỏ qua quảng cáo cũng áp dụng được cho đoạn chờ đến Tết. ⏩",
-    "Hôm nay team mình có ai nghe nhạc xuân trước khi mở email chưa? 🎧",
-    "Một góc bàn gọn gàng làm việc cuối năm nhẹ đi đôi chút. 🪴",
-    "Chúc mọi người bàn giao gọn và nhớ mang sạc về quê. 🔌",
-    "Cuối năm rồi, gửi một lời cảm ơn cho người từng giúp mình nhé. 💛",
-    "Bánh tét cắt khoanh nào cũng tròn, mong ngày hôm nay cũng trọn vẹn như vậy. 🍃",
-    "Ai phụ gói bánh nhớ tập buộc lạt trước khi nhận chỉ tiêu. 😄",
-    "Tiếng xe ngoài ngõ ngày cận Tết nghe giống tiếng người sắp về nhà. 🏠",
-    "Chúc bạn có thời gian uống cà phê khi ly còn nóng. ☕",
-    "Dọn nhà cuối năm là dịp tìm lại món đồ đã mua thêm vì tưởng mất. 📦",
-    "Cái ôm lúc vừa về tới cửa có khi là điều mình mong nhất cả năm. 🫂",
-    "Nếu lịch trống được nửa tiếng, dành một chút để đi bộ cho thư thái nhé. 🌿",
-    "Cả năm dùng chuông báo thức, Tết chỉ muốn thức dậy vì mùi đồ ăn. 🍳",
-    "Hoa đào nở từ từ. Việc khó cũng cứ làm từng bước. 🌸",
-    "Chúc bạn đặt vé thuận lợi, xếp đồ vừa vali và về nhà an toàn. 🧳",
-    "Hôm nay ai đóng task sớm được quyền chọn bài nhạc mở đầu buổi chiều. 🎶",
-    "Có dịp ghé chợ hoa thì đi chậm một chút để ngắm đủ các màu. 💐",
-    "Đầu năm mong bình an, cuối năm nhớ hỏi thăm nhau. 🌼",
-    "Muốn biết nhà ai có Tết sớm, cứ nhìn xem hũ dưa món đã mở chưa. 🥕",
-    "Những việc đã làm xong xứng đáng được ghi lại trước khi mở danh sách mới. 📝",
-    "Chúc cả team tìm được mốc bàn giao mà ai cũng thở phào. 🙌",
-    "Thấy xe chở quất chạy ngang là tự nhiên muốn dọn nhà. 🍊",
-    "Cuối năm, gọi về nhà sớm hơn thường lệ một chút cũng vui. 📞",
-    "Việc hôm nay làm gọn, tối về bóc quýt đọc sách. 🍊",
-    "Năm nay mong bàn ăn đông người và ai cũng có món mình thích. 🍽️",
-    "Trà ngon nhất lúc có người ngồi uống cùng. 🫖",
-    "Mình đã sẵn sàng nghỉ Tết, vali đang chờ được thông báo. 🧳",
-    "Mong bạn mang về nhà nhiều chuyện vui để kể. 🏡",
-    "Hôm nay cho phép mình vui vì một việc nhỏ đã làm xong nhé. ✨",
-    "Ngày nào thấy mai nở trong thành phố, ngày đó nghe nhạc xuân hợp hẳn. 🌼",
-    "Nếu phải xếp hàng mua đồ Tết, chúc bạn chọn đúng hàng chạy nhanh. 🛒",
-    "Phong bao đẹp nhất là phong bao có người đề tên mình bằng tay. 🧧",
-    "Ai còn nhớ lần đầu được giao canh nồi bánh chưng không? 🔥",
-    "Chúc bạn hoàn thành việc khó nhất trước khi đồng nghiệp rủ đi ăn trưa. 🍜",
-    "Có vài món chỉ ăn mỗi dịp Tết mà cả năm vẫn nhớ rõ vị. 🥢",
-    "Ngày cuối năm, nhớ cảm ơn cả bản thân vì đã đi được tới đây. 🌷",
-    "Chúc dự báo chuyến về nhà của bạn có nắng nhẹ và đường thông. 🚗",
-    "Nồi thịt kho mà có thêm trứng thì ai cũng tự nhận mình ăn ít. 🍲",
-    "Chúc team kết thúc ngày bằng tin nhắn ‘xong rồi nhé’. ✅",
-    "Nếu chưa biết chúc gì, ‘mong năm tới bạn có nhiều ngày vui’ là đủ rồi. 💌",
-    "Cuối năm rồi, để dành một buổi tối làm điều mình thích nhé. 🌙",
-    "Dọn tủ lạnh trước Tết để có chỗ cho phần đồ ăn người nhà gói mang đi. 🍱",
-    "Tết này thử chụp thêm một tấm ảnh cả nhà cùng vào khung hình. 📷",
-    "Giữa bao việc cuối năm, mong bạn vẫn có một bữa trưa đàng hoàng. 🍚",
-    "Một chiếc bánh chưng vuông vức rất có sức thuyết phục trong giờ đói. 😋",
-    "Chúc bạn chốt được việc cần chốt và ngủ một giấc ngon. 🌙",
-    "Ghé ngang chợ cuối năm, mua cho mình một bó hoa cũng được. 💐",
-    "Chúc chuyến về quê có đủ chỗ cho hành lý và một túi quà nhỏ. 🎁",
-    "Mỗi sáng thêm một chút háo hức, đến Tết vừa đủ một năm đầy chuyện để kể. 🧧",
-]
+COUNTDOWN_MESSAGES = {
+    # 90–76 ngày. Tết còn xa, bắt đầu nghĩ xem mình mong chờ điều gì.
+    90: "Còn khoảng ba tháng nữa là Tết. Mở lịch ngó mùng 1 một chút rồi quay lại với việc hôm nay thôi. 🗓️",
+    89: "Có việc nào bạn muốn làm xong trước khi nghỉ Tết? Ghi lại một dòng hôm nay. Tới cuối năm mở ra xem cũng vui.",
+    88: "Lịch họp vẫn dài hơn lịch nghỉ. Cứ thong thả, Tết đã có chỗ trên lịch rồi.",
+    87: "Lần tới gọi về nhà, thử hỏi Tết này cả nhà định tụ họp hôm nào. Có khi nghe kể một hồi là thấy muốn về rồi.",
+    86: "Vé xe, quà và lì xì cộng lại có thể hơi ngợp. Ước lượng từng khoản từ bây giờ rồi để dành dần sẽ dễ thở hơn.",
+    85: "Tết này bạn mong điều gì hơn mọi năm? Có khi chỉ là một buổi sáng được dậy muộn và ngồi ăn sáng thật lâu.",
+    84: "Hôm nào có bữa cơm vui, chụp lại một tấm. Cuối năm mở ra coi mới thấy những ngày bình thường cũng có nhiều chuyện hay.",
+    83: "Hội bạn cũ có muốn gặp nhau dịp Tết thì nhắn từ bây giờ. Vẫn còn đủ thời gian cho cả nhóm trả lời ‘để xem lịch’.",
+    82: "Có việc giấy tờ hay lịch hẹn muốn xong trước kỳ nghỉ thì chọn sẵn một ngày trong tháng này. Tới lúc bận, bạn sẽ mừng vì đã đặt lịch.",
+    81: "Ai đón khách ở nhà dịp Tết có thể hỏi trước mọi người định ghé mùng mấy. Biết lịch rồi còn để dành được một ngày nghỉ cho mình.",
+    80: "Nhắc tới Tết, nhà bạn nghĩ ngay đến món gì? Bánh tét, thịt đông hay cái hũ mứt lúc nào cũng vơi trước?",
+    79: "Mấy ngày nghỉ Tết tới, bạn muốn đi đâu đó hay thích ở yên một chỗ? Nghĩ đến một ngày rảnh theo ý mình thôi cũng thấy vui.",
+    78: "Thử để trống một buổi trong lịch cuối năm cho việc bạn thích. Một buổi sáng đi bộ hay đọc sách cũng đáng có hẹn.",
+    77: "Hỏi thử mấy đứa nhỏ trong nhà đang mong điều gì nhất ở Tết. Có khi chúng chỉ mong được thức khuya với anh chị em họ.",
+    76: "Tết còn hơn hai tháng. Giờ vẫn còn thong thả để nghĩ xem năm nay mình muốn giữ lại phong tục nào của nhà.",
+
+    # 75–46 ngày. Lên lịch nghỉ, tính đường đi và đặt vé sớm.
+    75: "Ai đi xa dịp Tết có thể mở thử lịch tàu, xe hoặc máy bay. Hôm nay khảo giá và ngó khung giờ là đủ.",
+    74: "Nếu đi với người lớn tuổi, hỏi trước họ thích đi buổi nào. Một chuyến vừa giờ ăn, giờ ngủ sẽ dễ chịu hơn cho cả nhà.",
+    73: "Nhóm bạn định góp một chuyến xe về quê thì chốt điểm đón sớm. Đến lúc ba người gửi ba vị trí khác nhau là biết vì sao. 📍",
+    72: "Định xin nghỉ thêm một hai ngày quanh Tết thì trao đổi sớm với người làm cùng. Lúc lịch còn rộng rãi, mọi người dễ sắp xếp hơn.",
+    71: "Khi so giá vé, tính luôn chặng từ bến hay sân bay về nhà. Có chuyến nhìn rẻ lắm cho tới khi mở bản đồ.",
+    70: "Thử lưu lại hai chuyến bạn thấy hợp giờ và vừa túi tiền. Lúc cả nhà hỏi ‘chốt chuyến nào?’ sẽ có cái gửi ngay.",
+    69: "Ai làm việc xuyên Tết có thể hẹn trước một buổi ăn cơm với người thân. Biết ngày gặp nhau rồi, chờ tới hôm đó cũng vui.",
+    68: "Nhà có chó mèo mà bạn đi vắng vài ngày thì hỏi sớm người có thể ghé chăm. Mấy đứa ở nhà cũng cần có lịch Tết.",
+    67: "Định mua quà chung cho bố mẹ hay ông bà thì hỏi anh chị em trước. Cả nhà sẽ đỡ có ba hộp bánh giống hệt nhau.",
+    66: "Nếu đi xe nhà, tính thử số người và số vali. Nhớ chừa chỗ cho túi đồ ăn người nhà gói lúc quay lại.",
+    65: "Ai ở lại thành phố dịp Tết có thể hẹn một buổi cà phê với người cũng ở lại. Phố vắng đi một chút, nói chuyện cũng thong thả hơn.",
+    64: "Nếu lịch nghỉ vẫn đang chờ xác nhận, xem kỹ điều kiện đổi vé. Tới lúc đổi được ngày mà vẫn giữ được tiền thì nhẹ lòng hẳn.",
+    63: "Canh vé chiều về quê rồi, nhớ ngó luôn chiều quay lại. Chọn chuyến sao cho còn một tối nghỉ ngơi trước khi mở máy đi làm.",
+    62: "Hỏi ở nhà xem có món nào muốn bạn mang về từ chỗ đang sống. Có khi cả nhà chỉ nhờ đúng một món quen.",
+    61: "Nếu chuyến bạn muốn đã mở bán và lịch nghỉ đã rõ, đây là lúc dễ chốt. Có vé trong tay, chờ Tết cũng khác hẳn. 🎫",
+    60: "Còn hai tháng. Ai đã chốt ngày về, thử nhắn một câu ‘con có vé rồi’ cho người nhà. Từ đây sẽ có người đếm ngược cùng bạn.",
+    59: "Lúc mua vé tàu hay máy bay, nhìn lại họ tên và ngày đi trước khi thanh toán. Mất vài giây để cả chuyến đi yên tâm hơn.",
+    58: "Đi xe khách thì lưu luôn địa chỉ điểm đón và số nhà xe. Tới hôm đi, khỏi kéo vali tìm đúng cây xăng giữa một con đường dài.",
+    57: "Lịch hai tháng tới nhìn còn rộng. Chọn sẵn một việc cần xong trước kỳ nghỉ để tới cuối năm khỏi nhớ ra cùng lúc với mười việc khác.",
+    56: "Định gửi quà về xa thì hỏi người nhận hôm nào có nhà. Hẹn được ngày nhận đỡ phải nhờ cả xóm giữ giùm một thùng.",
+    55: "Mở lại ảnh Tết năm ngoái thử xem. Có khi tấm cả nhà đứng lệch hàng mà ai cũng cười mới là tấm muốn giữ nhất.",
+    54: "Ai định tự lái đường dài có thể chọn sẵn một buổi kiểm tra xe. Sát Tết còn đủ thứ để lo, bớt được một việc là mừng.",
+    53: "Có người bạn lâu rồi chưa gặp thì thử nhắn hôm nay. Hẹn được một ly cà phê dịp Tết cũng có thêm một chuyện để chờ.",
+    52: "Mỗi cuối tuần làm một việc chuẩn bị Tết là vừa. Tuần này xử lý một góc nhà thôi, còn sức đi ăn tối.",
+    51: "Nhà có cái ghế lung lay hay vòi nước nhỏ giọt thì tranh thủ sửa một buổi. Tới lúc đông người, cái ghế vững sẽ có ích.",
+    50: "Còn 50 ngày. Đủ gần để hỏi cả nhà muốn ăn gì dịp Tết và vẫn đủ xa để mọi người đổi ý vài lần.",
+    49: "Ai định đi xa nhiều ngày có thể nhờ người tưới cây. Chậu cây còn xanh khi bạn quay lại là một lời chúc năm mới rất thiết thực. 🪴",
+    48: "Nếu ở nhà hỏi ‘về muốn ăn gì?’, cứ nói một món bạn thực sự nhớ. Có khi món đó chỉ là canh chua với cá kho.",
+    47: "Muốn chọn một món quà nhỏ mà hợp ý, thử nhớ xem người nhận từng nhắc gì. Một hộp trà đúng loại họ hay uống cũng đủ làm họ vui.",
+    46: "Ai đón khách ngủ lại thì xem chăn gối và chỗ nằm từ giờ. Một cái ổ cắm cạnh giường cũng đáng giá lắm với người vừa đi xa.",
+
+    # 45–31 ngày. Thử đồ, chọn quà và chuẩn bị nhà cửa.
+    45: "Còn một tháng rưỡi. Thử phối một bộ đi chúc Tết từ đồ đang có. Biết mình thiếu gì rồi đi mua sẽ nhàn hơn.",
+    44: "Ai muốn may hoặc sửa áo dài dịp Tết có thể hỏi lịch tiệm từ bây giờ. Vẫn còn thời gian thử cho vừa và đổi ý về màu.",
+    43: "Có đôi giày mới định mang Tết thì đi thử một vòng. Hôm đi chúc Tết cả buổi, bàn chân sẽ cảm ơn bạn.",
+    42: "Dọn thử ngăn kéo hay dùng nhất trước. Rất có thể bạn sẽ tìm lại món đồ đã cất ở chỗ ‘dễ nhớ lắm’.",
+    41: "Còn mấy tuần để gói quà thong thả. Thử viết một tấm thiệp cho người lâu rồi bạn chưa gặp, kể một chuyện nhỏ của năm nay.",
+    40: "Hỏi công thức món Tết hay ăn ở nhà. Nhớ hỏi kỹ đoạn người lớn bảo ‘nêm vừa miệng là được’.",
+    39: "Ai định đặt bánh chưng, bánh tét ở chỗ quen thì hỏi hôm nào họ nhận đơn. Mở lời sớm để còn chọn được ngày lấy bánh.",
+    38: "Mở hộp đồ trang trí năm ngoái xem trước khi đi mua. Dây đèn còn sáng, treo sang góc khác cũng thấy căn phòng mới hẳn.",
+    37: "Lúc chọn quà cho cả nhà, nhớ đến người hay đứng bếp. Hôm nào cả nhà nấu cho họ ngồi ăn trước thì càng vui.",
+    36: "Nhà nào thích làm mứt thì chọn một cuối tuần rảnh. Mẻ đầu tiên thường có cả đội kiểm tra chất lượng đứng quanh.",
+    35: "Còn năm tuần. Nếu vẫn đang canh vé xe về quê, hỏi nhà xe về chỗ và giờ đón. Chốt được ghế rồi hẵng tính mang mấy túi.",
+    34: "Sắp tới mùa ảnh Tết đầy nhóm chat. Ai còn giữ tấm hồi nhỏ mặc đồ mới đứng trước cửa nhà, giờ đem ra khoe được rồi.",
+    33: "Đi thử đồ Tết nhớ thử cả ngồi xuống. Bộ đồ vừa đứng chụp ảnh lẫn ngồi ăn cỗ mới đáng đem về.",
+    32: "Mua áo quần cho mấy đứa nhỏ thì hỏi cỡ trước. Từ Tết trước tới giờ, có bé đã cao thêm cả một đoạn tay áo.",
+    31: "Dọn một ngăn tủ lạnh để chừa chỗ cho đồ Tết. Đây là dịp ăn nốt cái hộp bạn đã dời từ ngăn này sang ngăn kia.",
+
+    # 30–16 ngày. Sắm Tết, chuẩn bị quà, đồ ăn và những cuộc hẹn.
+    30: "Còn một tháng. Danh sách sắm Tết bắt đầu có áo quần, quà biếu, bánh mứt. Mua dần mấy món cần trước để tuần cuối còn thong thả.",
+    29: "Lấy mấy phong bao lì xì năm ngoái còn dư ra xem. Cái đẹp nhất đôi khi nằm ngay dưới đáy ngăn kéo. 🧧",
+    28: "Còn bốn tuần. Ai muốn tự làm dưa món hay củ kiệu thì xem trước công thức cần bao lâu. Có món ngon nhờ được ngâm từ sớm.",
+    27: "Mua đồ mới rồi thì treo cả bộ lên cùng một chỗ. Tới sáng mùng 1 khỏi đi tìm cái thắt lưng khắp nhà.",
+    26: "Nhà hay có khách ghé chơi có thể sắm trước trà, hạt và mứt. Mua vừa đủ để sau Tết còn muốn nhìn mặt hũ mứt.",
+    25: "Thử dọn lối vào nhà hôm nay. Xếp lại giày dép, bỏ mấy cái thùng rỗng là đã có chỗ đón khách.",
+    24: "Ai đang tính tiền lì xì có thể ghi ra số phong bao cần chuẩn bị. Đến tối giao thừa sẽ còn rảnh tay bóc quýt.",
+    23: "Nếu định tặng đồ ăn tự làm, hỏi xem người nhận có kiêng món gì. Một hộp hợp khẩu vị vui hơn cả một giỏ đầy.",
+    22: "Nhắn người thân hỏi bữa tất niên mỗi nhà định tổ chức hôm nào. Nếu trùng lịch, vẫn còn thời gian hẹn nhau một bữa trưa.",
+    21: "Còn ba tuần. Mở lại tin nhắn xác nhận vé xem giờ khởi hành có thay đổi không. Biết sớm còn kịp báo người đưa đón.",
+    20: "Ghé chợ thấy mấy sạp bắt đầu bày đồ đỏ, tự nhiên thấy Tết gần thật. Ai đi mua một món nhớ giữ lời với cái giỏ của mình.",
+    19: "Nhà có người đi làm xa thì hỏi xem họ muốn được đón ở bến hay tự về. Một câu ‘tới nơi nhắn nha’ nghe đơn giản mà ấm.",
+    18: "Quà đem theo lên xe thì thử xếp cùng vali. Hộp bánh giữ được nguyên góc khi tới nhà là một thành tựu. 🎁",
+    17: "Chọn một việc dọn nhà làm trong 20 phút. Lau xong cửa kính hay xếp xong kệ sách là thấy nhà sáng hẳn.",
+    16: "Ai còn quà hay thiệp cần gửi đi xa thì xem ngày giao dự kiến. Sát Tết, thùng hàng của mình cũng có một chuyến về quê.",
+
+    # 15–8 ngày. Chốt việc, kiểm tra đồ đạc và chuẩn bị đi xa.
+    15: "Còn nửa tháng. Chọn việc nào cần bàn giao trước khi nghỉ, rồi ghi rõ ai làm tiếp và file nằm ở đâu. Cả hai bên đều nhẹ đầu.",
+    14: "Còn hai tuần. Thử hết bộ đồ định mặc mùng 1, kể cả giày và áo khoác. Tối giao thừa mới đi tìm nút áo thì hơi hồi hộp.",
+    13: "Ai còn ca trực dịp Tết, hẹn sẵn một buổi gọi điện lúc mình rảnh. Nghe người nhà kể chuyện chuẩn bị Tết cũng vui lây.",
+    12: "Ghi ra mấy món cần mua tươi vào những ngày cuối. Lúc chợ đông, danh sách ngắn giúp mình ra về trước khi tay đầy thêm ba túi.",
+    11: "Nếu đã có tiền lẻ và phong bao, thử ghi tên lên mấy bao dễ nhầm. Sáng mùng 1 sẽ đỡ phải nhìn hai cái bao giống nhau rồi đoán.",
+    10: "Mười ngày nữa. Lưu giờ mở cửa của tiệm hay mua đồ Tết. Đến nơi thấy cửa cuốn kéo xuống là hết hứng đi chợ.",
+    9: "Ai sắp đi xa, gom giấy tờ, vé và sạc vào một túi dễ lấy. Hôm ra cửa chỉ cần nhớ đúng một chỗ.",
+    8: "Dọn một góc để đặt bình hoa, cành đào hoặc chậu mai. Có người chỉ cần thay tấm khăn bàn là thấy phòng khách có Tết.",
+
+    # 7–1 ngày. Về quê, ăn tất niên và đón giao thừa.
+    7: "Còn đúng một tuần. Gửi nốt bàn giao, chúc đồng đội nghỉ vui rồi thở phào một cái. Tết bắt đầu thấy gần tới nơi rồi.",
+    6: "Ai sắp về quê, nhắn người nhà giờ mình tới dự kiến. Có người nghe xong sẽ tính luôn nên để phần bạn món gì.",
+    5: "Thử đóng vali một lượt. Để trống một góc cho đồ ăn lúc quay lại. Câu ‘mang một ít thôi’ ở nhà thường được đo bằng túi lớn.",
+    4: "Nếu ghé chợ hoa hôm nay, đi chậm một chút. Nhìn quất, đào và mai xếp dọc lối đi là thấy đoạn đường về nhà khác hẳn. 🌼",
+    3: "Ai đang trên đường về, chúc chuyến đi thuận lợi. Ai đã tới nhà, mong bạn kịp ngồi xuống ăn một bữa cơm nóng.",
+    2: "Nhà nào gói bánh hôm nay, để người mới tập buộc thử một chiếc. Mấy cái bánh hơi méo thường có chuyện vui nhất để kể.",
+    1: "Sáng cuối năm rồi. Chúc người đang đi đường sớm tới nơi và người còn trực có một ca yên ổn. Tối nay nhớ gọi cho người bạn muốn chúc Tết đầu tiên nhé.",
+}
+
 
 # Link tìm bài hát Tết trên YouTube
 SONGS = [
@@ -128,6 +140,7 @@ SONGS = [
     "Phút Giao Thừa Lặng Lẽ",
     "Mùa Xuân Ơi",
 ]
+
 
 def next_tet(today):
     with (APP_DIR / "tet-dates.txt").open(encoding="ascii") as dates:
@@ -148,8 +161,8 @@ def build_message(today, tet_date):
         return (
             f"🎊 *CHÚC MỪNG NĂM MỚI {year_name}!* 🎊\n\n"
             "🧧 *HÔM NAY LÀ MÙNG 1 TẾT!* 🧧\n\n"
-            "Chúc cả team một năm mới sức khỏe, may mắn, hạnh phúc và thành công! 🌸\n"
-            "✨ Chúc mọi người năm mới ít bug, nhiều bonus, mọi deadline đều suôn sẻ! 🥳"
+            "Chúc mọi người năm mới mạnh khỏe, có nhiều ngày vui và đủ thời gian cho những người mình thương.\n"
+            "Mong sáng mùng 1 của bạn có một lời chúc ấm lòng và một tách trà được uống lúc còn nóng. 🌸"
         )
 
     if remaining == COUNTDOWN_DAYS:
@@ -161,24 +174,19 @@ def build_message(today, tet_date):
     else:
         title = f"🧧 *CÒN {remaining} NGÀY NỮA LÀ TẾT!*"
 
-    # Đổi thứ tự theo mùa và dùng mỗi câu đúng một lần trong 90 ngày.
-    seasonal_messages = random.Random(year).sample(MESSAGES, k=COUNTDOWN_DAYS)
     lines = [
         f"🧧 *ĐẾM NGƯỢC TẾT {year_name}* 🌸",
         "",
         title,
         f"📅 Mùng 1 Tết: {tet_date:%d/%m/%Y}",
         "",
-        f"💬 _{seasonal_messages[remaining - 1]}_",
+        f"💬 _{COUNTDOWN_MESSAGES[remaining]}_",
     ]
     rng = random.Random(today.toordinal() + year)
     if rng.random() < 0.4:
         song = rng.choice(SONGS)
         url = "https://www.youtube.com/results?search_query=" + quote_plus(song)
         lines.extend(["", f"🎵 Nhạc Tết hôm nay: <{url}|{song}>"])
-    if remaining <= 3:
-        lines.extend(["", "🧳 Chuẩn bị hành lý và sẵn sàng về nhà thôi!"])
-    lines.extend(["", "✨ Chúc cả team một ngày thật vui vẻ!"])
     return "\n".join(lines)
 
 
