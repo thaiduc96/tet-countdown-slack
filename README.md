@@ -1,70 +1,76 @@
-# Bot Slack đếm ngược Tết hằng năm
+# Tết Countdown for Slack
 
-Mỗi năm, bot bắt đầu gửi lúc **09:00 giờ Việt Nam** vào ngày còn đúng **90 ngày** đến mùng 1 Tết. Bot gửi mỗi ngày, có tin riêng cho giao thừa và mùng 1, rồi tự chờ đến mốc 90 ngày của Tết năm sau. Tin nhắn xen kẽ câu vui, lời động viên và chuyện ngày Tết. Khoảng 40% số ngày có thêm liên kết tìm bài hát Tết trên YouTube.
+The bot posts in Vietnamese at **09:00 Vietnam time** each day from **90 days before Tết** through the first day of the Lunar New Year. The messages follow the season, from planning time off and booking tickets to shopping for new clothes, packing, and heading home. New Year's Eve and New Year's Day have their own messages. About 40% of countdown messages include a YouTube search link for a Tết song.
 
-Tệp `tet-dates.txt` chứa ngày mùng 1 Tết theo lịch âm Việt Nam từ **2026 đến 2199**. Bot đọc bảng này ngay trên Mac. Ví dụ, mùa Tết 2027 bắt đầu ngày 08/11/2026 và mùa Tết 2028 bắt đầu ngày 28/10/2027. [Dữ liệu lịch âm của Hồ Ngọc Đức](https://www.xemamlich.uhm.vn/JavaScript/)
+The bot reads `tet-dates.txt`, a table of Vietnamese Lunar New Year dates from **2026 through 2199**. The 2027 countdown begins on November 8, 2026, and the 2028 countdown begins on October 28, 2027. [Vietnamese lunar calendar data by Hồ Ngọc Đức](https://www.xemamlich.uhm.vn/JavaScript/)
 
-## Chạy bằng GitHub Actions
+## Create a Slack incoming webhook
 
-1. Giải nén ZIP. Đưa toàn bộ mã nguồn, gồm thư mục ẩn `.github`, lên nhánh mặc định của repo riêng tư `thaiduc96/tet-countdown-slack`. Nếu dùng tên repo khác, cập nhật tên đầy đủ ở điều kiện `jobs.countdown.if` trong `.github/workflows/tet-countdown.yml`.
-2. Vào **Settings → Secrets and variables → Actions → New repository secret**. Đặt tên secret là `SLACK_WEBHOOK_URL` và dán Slack Incoming Webhook của channel đích. [Tài liệu GitHub về repository secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
-3. Vào **Actions → Tết Countdown → Run workflow**, chọn nhánh mặc định và chế độ `preview` để xem nội dung trong log. Chọn `send` khi muốn gửi tin đếm ngược thật của hôm nay. Lượt gửi tự động bắt đầu theo lịch khi workflow đã có trên nhánh mặc định và Actions đã bật.
+1. Open **Slack Your Apps** and select **Create New App → From scratch**. Name the app and select your Slack workspace. [Slack Your Apps](https://api.slack.com/apps)
+2. Open **Incoming Webhooks** and turn on **Activate Incoming Webhooks**.
+3. Select **Add New Webhook to Workspace**, choose the channel, and click **Allow**. For a private channel, join it before adding the webhook. Copy the URL from **Webhook URLs for Your Workspace**. [Slack's incoming webhook guide](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/)
 
-Để tạo repo mới từ Terminal có GitHub CLI đã đăng nhập, chạy trong thư mục vừa giải nén:
+Store the webhook URL as a GitHub Actions secret or enter it at the macOS install prompt.
+
+## Run on GitHub Actions
+
+1. Use this repository or fork it into your own account. If you use a fork or rename the repository, update the full `OWNER/REPO` name in `jobs.countdown.if` in [.github/workflows/tet-countdown.yml](.github/workflows/tet-countdown.yml) on the default branch.
+2. Go to **Settings → Secrets and variables → Actions → New repository secret**. Name it `SLACK_WEBHOOK_URL` and paste the Slack webhook URL into **Secret**. [GitHub's repository secret guide](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+3. Go to **Actions → Tết Countdown** and enable the workflow if prompted. Select **Run workflow** on the default branch and choose `preview` to see today's message in the log. Choose `send` to post today's countdown during an active countdown window.
+
+If you use GitHub CLI, run the following command with your repository name. It prompts for the webhook URL.
 
 ```sh
-git init -b main
-git add .github .gitignore README.md bot.py tet-dates.txt install.sh uninstall.sh
-git commit -m "Add annual Tet countdown bot"
-gh repo create thaiduc96/tet-countdown-slack --private --source=. --push
-gh secret set SLACK_WEBHOOK_URL --repo thaiduc96/tet-countdown-slack
+gh secret set SLACK_WEBHOOK_URL --repo OWNER/REPO
 ```
 
-Lệnh cuối sẽ hỏi URL trực tiếp. Nếu đã chạy LaunchAgent trên Mac và chuyển sang GitHub Actions cho cùng channel, chạy `./uninstall.sh` trên Mac để tránh hai nơi gửi cùng một ngày.
+When switching a channel from the macOS LaunchAgent to GitHub Actions, run `./uninstall.sh` on the Mac to avoid two deliveries on the same day.
 
-GitHub lên lịch lúc 09:00 giờ Việt Nam trong khoảng 23/10–20/02. Bot kiểm tra lại mốc 90 ngày trước khi gửi. Lượt chạy có thể trễ hoặc bị bỏ qua khi GitHub quá tải. Chế độ `send` có thể gửi bù trong ngày. Workflow lưu một dấu mốc sau khi Slack xác nhận để tránh gửi trùng khi chạy lại. Nếu cache đã bị xóa hoặc lượt chạy thất bại sau khi Slack nhận tin, kiểm tra channel trước khi chạy lại. [Tài liệu GitHub về lịch chạy](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+GitHub schedules the workflow at 09:00 Vietnam time from October 23 through February 20. The bot checks the exact 90-day window before posting. GitHub may delay or skip scheduled runs during heavy load. Use `send` to catch up on the same day. The workflow saves a delivery marker after Slack confirms a post to help prevent duplicates. If the cache was cleared or a run failed after Slack accepted a message, check the channel before retrying. [GitHub's scheduling reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
-## Cài đặt trên macOS
+GitHub automatically disables scheduled workflows in public repositories after 60 days without repository activity. Before the next countdown starts, check **Actions → Tết Countdown** and select **Enable workflow** if it was disabled. [GitHub's guide to enabling workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows)
 
-1. Kiểm tra Python bằng `python3 --version`. Cần **Python 3.10 trở lên**. Nếu cần cài Python, tải bộ cài cho macOS, rồi mở lại Terminal. Bot dùng thư viện chuẩn Python và `curl` có sẵn trên macOS. [Tải Python cho macOS](https://www.python.org/downloads/macos/)
-2. Nếu đã có Slack Incoming Webhook cho channel đích, dùng lại URL đó. Để tạo mới, mở Slack API → **Your Apps** → **Create New App** → **From scratch** → **Incoming Webhooks**. Bật **Activate Incoming Webhooks**, chọn **Add New Webhook to Workspace**, chọn channel rồi bấm **Allow**. Với channel riêng tư, tài khoản tạo webhook cần là thành viên của channel đó. Sao chép Webhook URL. [Hướng dẫn của Slack](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/)
-3. Mở Terminal trong thư mục mã nguồn `tet-countdown-slack` đã giải nén hoặc clone, rồi chạy:
+## Run on macOS
 
-   ```sh
-   python3 bot.py --preview
-   ./install.sh
-   ```
+Check that `python3 --version` reports **Python 3.10 or later**. The bot uses the Python standard library and the `curl` included with macOS. [Download Python for macOS](https://www.python.org/downloads/macos/)
 
-   Dán Webhook URL tại lời nhắc trong Terminal và nhấn Enter. Terminal sẽ ẩn ký tự khi dán. Hãy chạy dưới tài khoản đang đăng nhập macOS. Bộ cài lưu webhook cục bộ với quyền `600`, trong thư mục `~/Library/Application Support/Tet Countdown` có quyền `700`.
-
-Nếu đã cài bản chỉ chạy Tết 2027, chuẩn bị URL webhook rồi chạy `./uninstall.sh` từ thư mục **bản cũ** trước khi cài bản hằng năm. Nếu bản cũ đã gửi tin hôm nay, cài bản hằng năm sau 10:00 giờ Việt Nam để tránh gửi trùng trong ngày chuyển đổi.
-
-## Chạy thử và xem nhật ký
+Open Terminal in the cloned or extracted `tet-countdown-slack` directory while signed in to macOS, then run the following commands.
 
 ```sh
-# Xem trước mốc mở màn, giao thừa và mùng 1 ở các mùa khác nhau.
+python3 bot.py --preview
+./install.sh
+```
+
+Paste the Slack webhook URL at the prompt and press Enter. Terminal hides the value as you enter it. The installer stores it locally in a file with mode `600` under `~/Library/Application Support/Tet Countdown`, which has mode `700`.
+
+If you installed the original 2027-only version, have the webhook URL ready and run `./uninstall.sh` from the old version's source directory before installing this one. If the old version already posted today, install the annual version after 10:00 Vietnam time to avoid a duplicate during the changeover.
+
+### Preview messages and inspect logs
+
+```sh
+# Preview the first countdown day, New Year's Eve, and New Year's Day.
 python3 bot.py --preview --date 2026-11-08
 python3 bot.py --preview --date 2027-02-05
 python3 bot.py --preview --date 2028-01-26
 
-# Kiểm tra LaunchAgent đã đăng ký.
+# Check that the LaunchAgent is registered.
 launchctl print "gui/$(id -u)/local.tet-countdown"
 
-# Gửi một tin có nhãn “Tin nhắn thử” thật vào channel đã chọn.
+# Post a labeled test message to the configured Slack channel.
 python3 "$HOME/Library/Application Support/Tet Countdown/bot.py" --test-send
 
-# Xem nhật ký sau khi LaunchAgent đã chạy.
+# Inspect the logs after the LaunchAgent has run.
 tail -n 20 "$HOME/Library/Application Support/Tet Countdown"/{stdout,stderr}.log
 ```
 
-Tin nhắn thử độc lập với lượt gửi hằng ngày. Trạng thái `not running` giữa các lượt chạy là bình thường. Nếu Slack trả HTTP 403 hoặc 404, kiểm tra webhook còn hoạt động và channel đã được cấp quyền. Để đổi webhook, chạy `./install.sh --replace-webhook` từ thư mục giải nén.
+A test message is independent of the daily delivery. The LaunchAgent normally shows `not running` between runs. If Slack returns HTTP 403 or 404, check that the webhook is still active and authorized for the channel. To replace it, run `./install.sh --replace-webhook` from the source directory.
 
-## Lịch gửi
+### How the macOS schedule works
 
-LaunchAgent đánh thức script vào các phút 00, 15, 30 và 45 theo đồng hồ Mac. Script dùng `Asia/Ho_Chi_Minh` để chọn lượt 09:00 và chỉ gửi trong khung **09:00–09:59 giờ Việt Nam**. Lịch vẫn dùng giờ Việt Nam nếu bạn đổi múi giờ macOS. Bot ghi nhận ngày gửi sau khi Slack xác nhận để tránh gửi lại cùng ngày.
+The LaunchAgent starts the script at minutes 00, 15, 30, and 45 according to the Mac's clock. The script uses `Asia/Ho_Chi_Minh` to send at 09:00 Vietnam time, even if you change the Mac's time zone. It records the delivery date after Slack confirms the post.
 
-Để gửi đúng 09:00, máy cần đang bật, thức, có mạng và tài khoản cài bot đã đăng nhập. Bạn có thể đóng Terminal hoặc khóa màn hình. Nếu máy thức lại hoặc bạn đăng nhập trong khung 09:00–09:59, bot có thể gửi muộn trong khung đó. Qua 10:00, bot bỏ qua ngày đó. [Cơ chế lập lịch và sleep của launchd](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html)
+For delivery at 09:00, keep the Mac awake and online with the installing user signed in. You can close Terminal or lock the screen. If the Mac wakes or you sign in between 09:00 and 09:59 Vietnam time, the bot may post later in that window. After 10:00, it skips that day's delivery. [Apple's guide to scheduling with launchd](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/ScheduledJobs.html)
 
-## Gỡ cài đặt
+### Uninstall on macOS
 
-Từ thư mục đã giải nén, chạy `./uninstall.sh`. Lệnh dỡ LaunchAgent và xóa các tệp bot đã cài, bao gồm webhook cục bộ, trạng thái gửi và nhật ký. Bạn có thể xóa webhook trong trang quản trị Slack nếu muốn thu hồi URL.
+Run `./uninstall.sh` from the source directory. It unloads the LaunchAgent and removes the installed files, including the local webhook, delivery state, and logs. You can revoke the webhook from the Slack app settings.
