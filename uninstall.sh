@@ -10,8 +10,8 @@ if [[ "$(/usr/bin/uname -s)" != Darwin || "$(/usr/bin/id -u)" == 0 ]]; then
     exit 1
 fi
 
-app_dir="$HOME/Library/Application Support/Tet Countdown 2027"
-label="local.tet-countdown-2027"
+app_dir="$HOME/Library/Application Support/Tet Countdown"
+label="local.tet-countdown"
 domain="gui/$(/usr/bin/id -u)"
 service="$domain/$label"
 plist="$HOME/Library/LaunchAgents/$label.plist"
@@ -24,8 +24,8 @@ if /bin/launchctl print "$service" >/dev/null 2>&1; then
     /bin/launchctl bootout "$service"
 fi
 
-/bin/rm -f "$plist" "$app_dir"/{bot.py,webhook,last-sent,last-sent.tmp,send.lock,stdout.log,stderr.log}
+/bin/rm -f "$plist" "$app_dir"/{bot.py,tet-dates.txt,webhook,last-sent,last-sent.tmp,send.lock,stdout.log,stderr.log}
 if [[ -d "$app_dir" ]]; then
     /bin/rmdir "$app_dir" 2>/dev/null || printf 'Thư mục còn tệp khác: %s\n' "$app_dir"
 fi
-printf 'Đã gỡ lịch Tết Countdown 2027.\n'
+printf 'Đã gỡ lịch Tết Countdown.\n'

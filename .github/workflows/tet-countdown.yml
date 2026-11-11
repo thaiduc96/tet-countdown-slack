@@ -1,0 +1,80 @@
+name: Tết Countdown
+
+on:
+  schedule:
+    # Covers every 90-day countdown window in tet-dates.txt.
+    - cron: '0 9 23-31 10 *'
+      timezone: Asia/Ho_Chi_Minh
+    - cron: '0 9 * 1,11,12 *'
+      timezone: Asia/Ho_Chi_Minh
+    - cron: '0 9 1-20 2 *'
+      timezone: Asia/Ho_Chi_Minh
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview the message or send today's countdown
+        type: choice
+        default: preview
+        options:
+          - preview
+          - send
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tet-countdown-${{ inputs.mode == 'preview' && 'preview' || 'delivery' }}
+  cancel-in-progress: false
+
+jobs:
+  countdown:
+    if: github.repository == 'thaiduc96/tet-countdown-slack' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preview the countdown
+        if: inputs.mode == 'preview'
+        run: python3 bot.py --preview
+
+      - name: Determine Vietnam delivery date
+        if: github.event_name == 'schedule' || inputs.mode == 'send'
+        id: delivery
+        run: |
+          delivery_date="$(python3 bot.py --delivery-date)"
+          printf 'date=%s\n' "$delivery_date" >> "$GITHUB_OUTPUT"
+          if [[ -z "$delivery_date" ]]; then
+            echo 'No countdown message is due today.'
+          fi
+
+      - name: Check whether today's message was sent
+        if: steps.delivery.outputs.date != ''
+        id: sent
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: last-sent
+          key: tet-countdown-delivered-${{ steps.delivery.outputs.date }}
+          lookup-only: true
+
+      - name: Send today's Slack message
+        if: steps.delivery.outputs.date != '' && steps.sent.outputs.cache-hit != 'true'
+        id: send
+        env:
+          DELIVERY_DATE: ${{ steps.delivery.outputs.date }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
+            echo '::error::Set the SLACK_WEBHOOK_URL repository secret before sending.'
+            exit 1
+          fi
+          python3 bot.py --send-date "$DELIVERY_DATE"
+
+      - name: Save the delivery marker
+        if: steps.send.outcome == 'success' && hashFiles('last-sent') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: last-sent
+          key: tet-countdown-delivered-${{ steps.delivery.outputs.date }}

@@ -1,19 +1,22 @@
 import argparse
 import fcntl
 import json
+import os
 import random
 import re
 import subprocess
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
 
 
-TET_DATE = date(2027, 2, 6)
+COUNTDOWN_DAYS = 90
 TIMEZONE = ZoneInfo("Asia/Ho_Chi_Minh")
 APP_DIR = Path(__file__).resolve().parent
+STEMS = ("Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý")
+BRANCHES = ("Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi")
 WEBHOOK_PATTERN = re.compile(
     r"https://hooks\.slack(?:-gov)?\.com/services/[A-Za-z0-9_-]+/"
     r"[A-Za-z0-9_-]+/[A-Za-z0-9_-]+"
@@ -109,6 +112,7 @@ MESSAGES = [
     "Chúc bạn chốt được việc cần chốt và ngủ một giấc ngon. 🌙",
     "Ghé ngang chợ cuối năm, mua cho mình một bó hoa cũng được. 💐",
     "Chúc chuyến về quê có đủ chỗ cho hành lý và một túi quà nhỏ. 🎁",
+    "Mỗi sáng thêm một chút háo hức, đến Tết vừa đủ một năm đầy chuyện để kể. 🧧",
 ]
 
 # Link tìm bài hát Tết trên YouTube
@@ -125,38 +129,49 @@ SONGS = [
     "Mùa Xuân Ơi",
 ]
 
-# Thứ tự cố định giúp câu nói thay đổi mỗi ngày, kể cả khi chạy lại.
-random.Random(2027).shuffle(MESSAGES)
+def next_tet(today):
+    with (APP_DIR / "tet-dates.txt").open(encoding="ascii") as dates:
+        for line in dates:
+            tet_date = date.fromisoformat(line.strip())
+            if tet_date >= today:
+                return tet_date
+    return None
 
 
-def build_message(today):
-    remaining = (TET_DATE - today).days
-    if remaining < 0:
+def build_message(today, tet_date):
+    remaining = (tet_date - today).days
+    if not 0 <= remaining <= COUNTDOWN_DAYS:
         return None
+    year = tet_date.year
+    year_name = f"{STEMS[(year - 4) % 10]} {BRANCHES[(year - 4) % 12]} {year}".upper()
     if remaining == 0:
         return (
-            "🎊 *CHÚC MỪNG NĂM MỚI ĐINH MÙI 2027!* 🐐\n\n"
+            f"🎊 *CHÚC MỪNG NĂM MỚI {year_name}!* 🎊\n\n"
             "🧧 *HÔM NAY LÀ MÙNG 1 TẾT!* 🧧\n\n"
             "Chúc cả team một năm mới sức khỏe, may mắn, hạnh phúc và thành công! 🌸\n"
             "✨ Chúc mọi người năm mới ít bug, nhiều bonus, mọi deadline đều suôn sẻ! 🥳"
         )
 
-    if remaining == 1:
+    if remaining == COUNTDOWN_DAYS:
+        title = f"🧧 *BẮT ĐẦU ĐẾM NGƯỢC. CÒN {remaining} NGÀY NỮA LÀ TẾT!*"
+    elif remaining == 1:
         title = "🎆 *HÔM NAY LÀ NGÀY GIAO THỪA. CÒN 1 NGÀY NỮA LÀ TẾT!*"
     elif remaining <= 7:
         title = f"🔥 *CHỈ CÒN {remaining} NGÀY NỮA LÀ TẾT!*"
     else:
         title = f"🧧 *CÒN {remaining} NGÀY NỮA LÀ TẾT!*"
 
+    # Đổi thứ tự theo mùa và dùng mỗi câu đúng một lần trong 90 ngày.
+    seasonal_messages = random.Random(year).sample(MESSAGES, k=COUNTDOWN_DAYS)
     lines = [
-        "🐐 *ĐẾM NGƯỢC TẾT ĐINH MÙI 2027* 🌸",
+        f"🧧 *ĐẾM NGƯỢC TẾT {year_name}* 🌸",
         "",
         title,
-        "📅 Mùng 1 Tết: 06/02/2027",
+        f"📅 Mùng 1 Tết: {tet_date:%d/%m/%Y}",
         "",
-        f"💬 _{MESSAGES[(remaining - 1) % len(MESSAGES)]}_",
+        f"💬 _{seasonal_messages[remaining - 1]}_",
     ]
-    rng = random.Random(today.toordinal() + 2027)
+    rng = random.Random(today.toordinal() + year)
     if rng.random() < 0.4:
         song = rng.choice(SONGS)
         url = "https://www.youtube.com/results?search_query=" + quote_plus(song)
@@ -168,18 +183,20 @@ def build_message(today):
 
 
 def send_slack(message):
-    webhook_file = APP_DIR / "webhook"
-    if not webhook_file.is_file():
-        raise ValueError("Chưa có Slack Incoming Webhook. Hãy chạy ./install.sh.")
-    url = webhook_file.read_text(encoding="utf-8").strip()
+    url = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
+    if not url:
+        webhook_file = APP_DIR / "webhook"
+        if not webhook_file.is_file():
+            raise ValueError("Chưa có Slack Incoming Webhook. Hãy cấu hình webhook trước khi gửi.")
+        url = webhook_file.read_text(encoding="utf-8").strip()
     if not WEBHOOK_PATTERN.fullmatch(url):
-        raise ValueError("Webhook sai định dạng. Hãy chạy ./install.sh --replace-webhook.")
+        raise ValueError("Slack Incoming Webhook sai định dạng.")
 
     payload = json.dumps(
         {"text": message, "unfurl_links": False, "unfurl_media": False},
         ensure_ascii=False,
     )
-    # curl của macOS dùng chứng chỉ hệ thống. Đọc URL qua stdin để giữ bí mật
+    # curl dùng chứng chỉ hệ thống. Đọc URL qua stdin để giữ bí mật
     # khi xem danh sách tiến trình. --disable bỏ cấu hình curl cá nhân.
     result = subprocess.run(
         [
@@ -215,29 +232,44 @@ def send_daily(today, message):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Bot Slack đếm ngược Tết Đinh Mùi 2027.")
+    parser = argparse.ArgumentParser(description="Bot Slack đếm ngược Tết Nguyên đán hằng năm.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--preview", action="store_true", help="in nội dung xem trước (mặc định)")
     mode.add_argument("--test-send", action="store_true", help="gửi một tin thử vào Slack")
     mode.add_argument("--scheduled", action="store_true", help=argparse.SUPPRESS)
+    mode.add_argument("--delivery-date", action="store_true", help=argparse.SUPPRESS)
+    mode.add_argument("--send-date", type=date.fromisoformat, help=argparse.SUPPRESS)
     parser.add_argument("--date", type=date.fromisoformat, help="ngày xem trước (YYYY-MM-DD)")
     args = parser.parse_args()
-    if args.date and (args.scheduled or args.test_send):
+    if args.date and (args.scheduled or args.test_send or args.delivery_date or args.send_date):
         parser.error("--date chỉ dùng để xem trước.")
 
     now = datetime.now(TIMEZONE)
-    if args.scheduled and (now.hour != 9 or now.date() > TET_DATE):
+    if args.scheduled and now.hour != 9:
         return 0
 
-    message = build_message(args.date or now.date())
-    if message is None:
-        print("Tết 2027 đã qua. Đã dừng thông báo.")
-        return 0
-
+    today = args.date or now.date()
+    if args.send_date and args.send_date != today:
+        parser.error("Ngày gửi phải là ngày hiện tại theo giờ Việt Nam.")
     try:
-        if args.scheduled:
-            send_daily(now.date(), message)
-        elif args.test_send:
+        tet_date = next_tet(today)
+        message = build_message(today, tet_date) if tet_date else None
+        if args.delivery_date:
+            if message:
+                print(today.isoformat())
+            return 0
+        if args.scheduled or args.send_date:
+            if message:
+                send_daily(today, message)
+            return 0
+
+        if message is None:
+            if tet_date:
+                start = tet_date - timedelta(days=COUNTDOWN_DAYS)
+                message = f"Mùa đếm ngược Tết {tet_date.year} bắt đầu ngày {start:%d/%m/%Y}."
+            else:
+                message = "Đã hết dữ liệu ngày Tết. Cập nhật tệp tet-dates.txt để tiếp tục."
+        if args.test_send:
             send_slack("🧪 *Tin nhắn thử*\n\n" + message)
             print("Đã gửi tin nhắn thử vào Slack.")
         else:

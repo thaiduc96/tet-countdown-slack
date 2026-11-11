@@ -12,9 +12,9 @@ if [[ "$(/usr/bin/uname -s)" != Darwin || "$(/usr/bin/id -u)" == 0 ]]; then
 fi
 
 source_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-app_dir="$HOME/Library/Application Support/Tet Countdown 2027"
+app_dir="$HOME/Library/Application Support/Tet Countdown"
 agents_dir="$HOME/Library/LaunchAgents"
-label="local.tet-countdown-2027"
+label="local.tet-countdown"
 domain="gui/$(/usr/bin/id -u)"
 service="$domain/$label"
 plist="$agents_dir/$label.plist"
@@ -90,6 +90,7 @@ if /bin/launchctl print "$service" >/dev/null 2>&1; then
     /bin/launchctl bootout "$service"
 fi
 /usr/bin/install -m 600 "$source_dir/bot.py" "$app_dir/bot.py"
+/usr/bin/install -m 600 "$source_dir/tet-dates.txt" "$app_dir/tet-dates.txt"
 /bin/mv -f "$tmp_webhook" "$webhook_file"
 /bin/mv -f "$tmp_plist" "$plist"
 /bin/launchctl bootstrap "$domain" "$plist"
