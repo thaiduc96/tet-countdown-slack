@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+/webhook
+/last-sent
+/last-sent.tmp
+/send.lock
+/*.log
