@@ -1,6 +1,6 @@
 # Tết Countdown for Slack
 
-The bot posts in Vietnamese at **09:00 Vietnam time** each day from **90 days before Tết** through the first day of the Lunar New Year. The messages follow the season, from planning time off and booking tickets to shopping for new clothes, packing, and heading home. New Year's Eve and New Year's Day have their own messages. About 40% of countdown messages include a YouTube search link for a Tết song.
+The bot posts in Vietnamese around **09:00 Vietnam time** each day from **90 days before Tết** through the first day of the Lunar New Year. The messages follow the season, from planning time off and booking tickets to shopping for new clothes, packing, and heading home. New Year's Eve and New Year's Day have their own messages. About 40% of countdown messages include a YouTube search link for a Tết song.
 
 The bot reads `tet-dates.txt`, a table of Vietnamese Lunar New Year dates from **2026 through 2199**. The 2027 countdown begins on November 8, 2026, and the 2028 countdown begins on October 28, 2027. [Vietnamese lunar calendar data by Hồ Ngọc Đức](https://www.xemamlich.uhm.vn/JavaScript/)
 
@@ -26,7 +26,7 @@ gh secret set SLACK_WEBHOOK_URL --repo OWNER/REPO
 
 When switching a channel from the macOS LaunchAgent to GitHub Actions, run `./uninstall.sh` on the Mac to avoid two deliveries on the same day.
 
-GitHub schedules the workflow at 09:00 Vietnam time from October 23 through February 20. The bot checks the exact 90-day window before posting. GitHub may delay or skip scheduled runs during heavy load. Use `send` to catch up on the same day. The workflow saves a delivery marker after Slack confirms a post to help prevent duplicates. If the cache was cleared or a run failed after Slack accepted a message, check the channel before retrying. [GitHub's scheduling reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+GitHub schedules the workflow at 09:13 Vietnam time, with a retry at 10:13, from October 23 through February 20. Both times avoid the top of the hour, when GitHub is busiest and most likely to delay or drop scheduled runs. The retry posts only if the delivery marker shows that today's message has not been sent. The bot checks the exact 90-day window before posting. If GitHub delays or skips both runs, use `send` to catch up on the same day. The workflow saves a delivery marker after Slack confirms a post to help prevent duplicates. If the cache was cleared or a run failed after Slack accepted a message, check the channel before retrying. [GitHub's scheduling reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
 GitHub automatically disables scheduled workflows in public repositories after 60 days without repository activity. Before the next countdown starts, check **Actions → Tết Countdown** and select **Enable workflow** if it was disabled. [GitHub's guide to enabling workflows](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows)
 

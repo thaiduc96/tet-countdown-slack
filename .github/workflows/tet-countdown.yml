@@ -3,11 +3,13 @@ name: Tết Countdown
 on:
   schedule:
     # Covers every 90-day countdown window in tet-dates.txt.
-    - cron: '0 9 23-31 10 *'
+    # Runs at 09:13 with a 10:13 retry. GitHub delays or drops runs at the
+    # busy top of the hour; the delivery marker makes the retry a no-op.
+    - cron: '13 9,10 23-31 10 *'
       timezone: Asia/Ho_Chi_Minh
-    - cron: '0 9 * 1,11,12 *'
+    - cron: '13 9,10 * 1,11,12 *'
       timezone: Asia/Ho_Chi_Minh
-    - cron: '0 9 1-20 2 *'
+    - cron: '13 9,10 1-20 2 *'
       timezone: Asia/Ho_Chi_Minh
   workflow_dispatch:
     inputs:
@@ -28,7 +30,10 @@ concurrency:
 
 jobs:
   countdown:
-    if: github.repository == 'thaiduc96/tet-countdown-slack' && github.ref_name == github.event.repository.default_branch
+    # Scheduled runs always use the default branch and may lack the repository payload.
+    if: >-
+      github.repository == 'thaiduc96/tet-countdown-slack' &&
+      (github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
