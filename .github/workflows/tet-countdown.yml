@@ -3,14 +3,13 @@ name: Tết Countdown
 on:
   schedule:
     # Covers every 90-day countdown window in tet-dates.txt.
-    # Runs at 09:13 with a 10:13 retry. GitHub delays or drops runs at the
-    # busy top of the hour; the delivery marker makes the retry a no-op.
-    - cron: '13 9,10 23-31 10 *'
-      timezone: Asia/Ho_Chi_Minh
-    - cron: '13 9,10 * 1,11,12 *'
-      timezone: Asia/Ho_Chi_Minh
-    - cron: '13 9,10 1-20 2 *'
-      timezone: Asia/Ho_Chi_Minh
+    # Plain UTC crons: the timezone-aware form never fired in this repository.
+    # 02:13, 03:13 and 04:13 UTC are 09:13, 10:13 and 11:13 in Vietnam (UTC+7,
+    # no daylight saving), on the same calendar date. Off the busy top of the
+    # hour; the delivery marker turns the later runs into no-ops.
+    - cron: '13 2-4 23-31 10 *'
+    - cron: '13 2-4 * 1,11,12 *'
+    - cron: '13 2-4 1-20 2 *'
   workflow_dispatch:
     inputs:
       mode:
