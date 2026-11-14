@@ -2,11 +2,10 @@ import argparse
 import fcntl
 import json
 import os
-import random
 import re
 import subprocess
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
@@ -14,6 +13,9 @@ from zoneinfo import ZoneInfo
 
 COUNTDOWN_DAYS = 90
 TIMEZONE = ZoneInfo("Asia/Ho_Chi_Minh")
+DELIVERY_TIME = time(9, 0)
+QUEUE_DAYS = 7
+SLACK_API_URL = "https://slack.com/api/"
 APP_DIR = Path(__file__).resolve().parent
 STEMS = ("Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý")
 BRANCHES = ("Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi")
@@ -21,6 +23,8 @@ WEBHOOK_PATTERN = re.compile(
     r"https://hooks\.slack(?:-gov)?\.com/services/[A-Za-z0-9_-]+/"
     r"[A-Za-z0-9_-]+/[A-Za-z0-9_-]+"
 )
+BOT_TOKEN_PATTERN = re.compile(r"xoxb-[A-Za-z0-9-]+")
+CHANNEL_ID_PATTERN = re.compile(r"[CG][A-Z0-9]+")
 
 COUNTDOWN_MESSAGES = {
     # 90–76 ngày. Tết còn xa, bắt đầu nghĩ xem mình mong chờ điều gì.
@@ -139,6 +143,21 @@ SONGS = [
     "Tết Đong Đầy",
     "Phút Giao Thừa Lặng Lẽ",
     "Mùa Xuân Ơi",
+    "Mùa Xuân Đầu Tiên - Văn Cao",
+    "Bến Xuân - Văn Cao",
+    "Điệp Khúc Mùa Xuân - Quốc Dũng",
+    "Ly Rượu Mừng - Phạm Đình Chương",
+    "Đón Xuân - Phạm Đình Chương",
+    "Câu Chuyện Đầu Năm - Hàn Châu",
+    "Mùa Xuân Làng Lúa Làng Hoa - Ngọc Khánh",
+    "Con Bướm Xuân - Hồ Quang Hiếu",
+    "Thì Thầm Mùa Xuân - Ngọc Châu",
+    "Mùa Xuân Bên Cửa Sổ - Xuân Hồng",
+    "Như Hoa Mùa Xuân - Phó Đức Phương",
+    "Đoản Xuân Ca - Thanh Sơn",
+    "Xuân Và Tuổi Trẻ - La Hối",
+    "Cánh Thiệp Đầu Xuân - Minh Kỳ",
+    "Năm Qua Đã Làm Gì - Noo Phước Thịnh",
 ]
 
 
@@ -162,7 +181,8 @@ def build_message(today, tet_date):
             f"🎊 *CHÚC MỪNG NĂM MỚI {year_name}!* 🎊\n\n"
             "🧧 *HÔM NAY LÀ MÙNG 1 TẾT!* 🧧\n\n"
             "Chúc mọi người năm mới mạnh khỏe, có nhiều ngày vui và đủ thời gian cho những người mình thương.\n"
-            "Mong sáng mùng 1 của bạn có một lời chúc ấm lòng và một tách trà được uống lúc còn nóng. 🌸"
+            "Mong sáng mùng 1 của bạn có một lời chúc ấm lòng và một tách trà được uống lúc còn nóng. 🌸\n\n"
+            + song_line(today)
         )
 
     if remaining == COUNTDOWN_DAYS:
@@ -181,13 +201,50 @@ def build_message(today, tet_date):
         f"📅 Mùng 1 Tết: {tet_date:%d/%m/%Y}",
         "",
         f"💬 _{COUNTDOWN_MESSAGES[remaining]}_",
+        "",
+        song_line(today),
     ]
-    rng = random.Random(today.toordinal() + year)
-    if rng.random() < 0.4:
-        song = rng.choice(SONGS)
-        url = "https://www.youtube.com/results?search_query=" + quote_plus(song)
-        lines.extend(["", f"🎵 Nhạc Tết hôm nay: <{url}|{song}>"])
     return "\n".join(lines)
+
+
+def song_line(today):
+    # Xoay vòng theo ngày để hai ngày liền nhau không trùng bài.
+    song = SONGS[today.toordinal() % len(SONGS)]
+    url = "https://www.youtube.com/results?search_query=" + quote_plus(song)
+    return f"🎵 Nhạc Tết hôm nay: <{url}|{song}>"
+
+
+def message_for(day):
+    tet_date = next_tet(day)
+    return build_message(day, tet_date) if tet_date else None
+
+
+def message_payload(message, **fields):
+    return {"text": message, "unfurl_links": False, "unfurl_media": False, **fields}
+
+
+def post_json(url, payload, headers=()):
+    # curl dùng chứng chỉ hệ thống. URL và header đi qua stdin để giữ bí mật
+    # khi xem danh sách tiến trình. --disable bỏ cấu hình curl cá nhân.
+    config = f'url = "{url}"\n' + "".join(f'header = "{header}"\n' for header in headers)
+    result = subprocess.run(
+        [
+            "/usr/bin/curl", "--disable", "--silent", "--max-time", "15",
+            "--header", "Content-Type: application/json; charset=utf-8",
+            "--data-binary", json.dumps(payload, ensure_ascii=False),
+            "--write-out", "\n%{http_code}",
+            "--config", "-",
+        ],
+        input=config,
+        encoding="utf-8",
+        errors="replace",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode:
+        raise ValueError(f"Lỗi kết nối khi gửi Slack (curl {result.returncode}).")
+    body, _, status = result.stdout.rpartition("\n")
+    return status, body
 
 
 def send_slack(message):
@@ -200,30 +257,59 @@ def send_slack(message):
     if not WEBHOOK_PATTERN.fullmatch(url):
         raise ValueError("Slack Incoming Webhook sai định dạng.")
 
-    payload = json.dumps(
-        {"text": message, "unfurl_links": False, "unfurl_media": False},
-        ensure_ascii=False,
-    )
-    # curl dùng chứng chỉ hệ thống. Đọc URL qua stdin để giữ bí mật
-    # khi xem danh sách tiến trình. --disable bỏ cấu hình curl cá nhân.
-    result = subprocess.run(
-        [
-            "/usr/bin/curl", "--disable", "--silent", "--max-time", "15",
-            "--header", "Content-Type: application/json",
-            "--data-binary", payload, "--write-out", "\n%{http_code}",
-            "--config", "-",
-        ],
-        input=f'url = "{url}"\n',
-        encoding="utf-8",
-        errors="replace",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    )
-    if result.returncode:
-        raise ValueError(f"Lỗi kết nối khi gửi Slack (curl {result.returncode}).")
-    body, _, status = result.stdout.rpartition("\n")
+    status, body = post_json(url, message_payload(message))
     if status != "200" or body.strip() != "ok":
         raise ValueError(f"Slack chưa xác nhận tin nhắn (HTTP {status}). Kiểm tra webhook và channel.")
+
+
+def call_slack_api(method, payload):
+    token = os.environ.get("SLACK_BOT_TOKEN", "").strip()
+    if not BOT_TOKEN_PATTERN.fullmatch(token):
+        raise ValueError("Chưa có SLACK_BOT_TOKEN hợp lệ (bắt đầu bằng xoxb-).")
+    status, body = post_json(SLACK_API_URL + method, payload, [f"Authorization: Bearer {token}"])
+    try:
+        response = json.loads(body)
+    except json.JSONDecodeError:
+        response = {}
+    if status != "200" or not response.get("ok"):
+        raise ValueError(f"Slack API {method} báo lỗi: {response.get('error', f'HTTP {status}')}.")
+    return response
+
+
+def slack_channel():
+    channel = os.environ.get("SLACK_CHANNEL_ID", "").strip()
+    if not CHANNEL_ID_PATTERN.fullmatch(channel):
+        raise ValueError("Chưa có SLACK_CHANNEL_ID hợp lệ (ví dụ C0123456789).")
+    return channel
+
+
+def delivery_timestamp(day):
+    return int(datetime.combine(day, DELIVERY_TIME, TIMEZONE).timestamp())
+
+
+def queued_timestamps(channel):
+    response = call_slack_api("chat.scheduledMessages.list", {"channel": channel, "limit": 100})
+    return {int(item["post_at"]) for item in response.get("scheduled_messages", [])}
+
+
+def queue_upcoming(now):
+    """Hẹn Slack gửi tin của QUEUE_DAYS ngày tới, đúng 09:00 giờ Việt Nam."""
+    channel = slack_channel()
+    queued = queued_timestamps(channel)
+    for offset in range(QUEUE_DAYS):
+        day = now.date() + timedelta(days=offset)
+        post_at = delivery_timestamp(day)
+        if post_at in queued or post_at <= now.timestamp() + 60:
+            continue
+        message = message_for(day)
+        if message:
+            payload = message_payload(message, channel=channel, post_at=post_at)
+            call_slack_api("chat.scheduleMessage", payload)
+            print(f"Đã hẹn gửi tin ngày {day} lúc 09:00.", flush=True)
+
+
+def post_now(message):
+    call_slack_api("chat.postMessage", message_payload(message, channel=slack_channel()))
 
 
 def send_daily(today, message):
@@ -245,11 +331,11 @@ def main():
     mode.add_argument("--preview", action="store_true", help="in nội dung xem trước (mặc định)")
     mode.add_argument("--test-send", action="store_true", help="gửi một tin thử vào Slack")
     mode.add_argument("--scheduled", action="store_true", help=argparse.SUPPRESS)
-    mode.add_argument("--delivery-date", action="store_true", help=argparse.SUPPRESS)
-    mode.add_argument("--send-date", type=date.fromisoformat, help=argparse.SUPPRESS)
+    mode.add_argument("--queue-upcoming", action="store_true", help=argparse.SUPPRESS)
+    mode.add_argument("--post-today", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--date", type=date.fromisoformat, help="ngày xem trước (YYYY-MM-DD)")
     args = parser.parse_args()
-    if args.date and (args.scheduled or args.test_send or args.delivery_date or args.send_date):
+    if args.date and (args.scheduled or args.test_send or args.queue_upcoming or args.post_today):
         parser.error("--date chỉ dùng để xem trước.")
 
     now = datetime.now(TIMEZONE)
@@ -257,16 +343,20 @@ def main():
         return 0
 
     today = args.date or now.date()
-    if args.send_date and args.send_date != today:
-        parser.error("Ngày gửi phải là ngày hiện tại theo giờ Việt Nam.")
     try:
+        if args.queue_upcoming:
+            queue_upcoming(now)
+            return 0
         tet_date = next_tet(today)
         message = build_message(today, tet_date) if tet_date else None
-        if args.delivery_date:
+        if args.post_today:
             if message:
-                print(today.isoformat())
+                post_now(message)
+                print(f"Đã gửi thông báo ngày {today}.")
+            else:
+                print("Hôm nay không có tin đếm ngược.")
             return 0
-        if args.scheduled or args.send_date:
+        if args.scheduled:
             if message:
                 send_daily(today, message)
             return 0

@@ -2,22 +2,23 @@ name: Tết Countdown
 
 on:
   schedule:
-    # Covers every 90-day countdown window in tet-dates.txt.
-    # Plain UTC crons: the timezone-aware form never fired in this repository.
-    # 02:13, 03:13 and 04:13 UTC are 09:13, 10:13 and 11:13 in Vietnam (UTC+7,
-    # no daylight saving), on the same calendar date. Off the busy top of the
-    # hour; the delivery marker turns the later runs into no-ops.
-    - cron: '13 2-4 23-31 10 *'
-    - cron: '13 2-4 * 1,11,12 *'
-    - cron: '13 2-4 1-20 2 *'
+    # Slack posts each message at exactly 09:00 Vietnam time. This run only
+    # queues the next 7 days with chat.scheduleMessage, so a GitHub delay of
+    # hours (or a skipped day) no longer moves the delivery time. 13:37 UTC is
+    # 20:37 in Vietnam. Runs from October 16 so the earliest first countdown day
+    # (October 23) is queued in time, through February 19 (latest Tết: Feb 20).
+    - cron: '37 13 16-31 10 *'
+    - cron: '37 13 * 1,11,12 *'
+    - cron: '37 13 1-19 2 *'
   workflow_dispatch:
     inputs:
       mode:
-        description: Preview the message or send today's countdown
+        description: Preview today's message, queue the next 7 days, or post today's message now
         type: choice
         default: preview
         options:
           - preview
+          - queue
           - send
 
 permissions:
@@ -44,41 +45,16 @@ jobs:
         if: inputs.mode == 'preview'
         run: python3 bot.py --preview
 
-      - name: Determine Vietnam delivery date
-        if: github.event_name == 'schedule' || inputs.mode == 'send'
-        id: delivery
-        run: |
-          delivery_date="$(python3 bot.py --delivery-date)"
-          printf 'date=%s\n' "$delivery_date" >> "$GITHUB_OUTPUT"
-          if [[ -z "$delivery_date" ]]; then
-            echo 'No countdown message is due today.'
-          fi
-
-      - name: Check whether today's message was sent
-        if: steps.delivery.outputs.date != ''
-        id: sent
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: last-sent
-          key: tet-countdown-delivered-${{ steps.delivery.outputs.date }}
-          lookup-only: true
-
-      - name: Send today's Slack message
-        if: steps.delivery.outputs.date != '' && steps.sent.outputs.cache-hit != 'true'
-        id: send
+      - name: Queue the next 7 days in Slack
+        if: github.event_name == 'schedule' || inputs.mode == 'queue'
         env:
-          DELIVERY_DATE: ${{ steps.delivery.outputs.date }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
-            echo '::error::Set the SLACK_WEBHOOK_URL repository secret before sending.'
-            exit 1
-          fi
-          python3 bot.py --send-date "$DELIVERY_DATE"
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python3 bot.py --queue-upcoming
 
-      - name: Save the delivery marker
-        if: steps.send.outcome == 'success' && hashFiles('last-sent') != ''
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: last-sent
-          key: tet-countdown-delivered-${{ steps.delivery.outputs.date }}
+      - name: Post today's message now
+        if: inputs.mode == 'send'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python3 bot.py --post-today
