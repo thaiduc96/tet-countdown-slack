@@ -271,6 +271,8 @@ def call_slack_api(method, payload):
         response = json.loads(body)
     except json.JSONDecodeError:
         response = {}
+    if not isinstance(response, dict):
+        response = {}
     if status != "200" or not response.get("ok"):
         raise ValueError(f"Slack API {method} báo lỗi: {response.get('error', f'HTTP {status}')}.")
     return response
@@ -293,10 +295,10 @@ def queued_timestamps(channel):
 
 
 def queue_upcoming(now):
-    """Hẹn Slack gửi tin của QUEUE_DAYS ngày tới, đúng 09:00 giờ Việt Nam."""
+    """Hẹn Slack gửi tin hôm nay (nếu chưa tới 09:00) và QUEUE_DAYS ngày tiếp theo, đúng 09:00."""
     channel = slack_channel()
     queued = queued_timestamps(channel)
-    for offset in range(QUEUE_DAYS):
+    for offset in range(QUEUE_DAYS + 1):
         day = now.date() + timedelta(days=offset)
         post_at = delivery_timestamp(day)
         if post_at in queued or post_at <= now.timestamp() + 60:
